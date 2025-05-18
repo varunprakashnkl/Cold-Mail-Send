@@ -48,3 +48,7 @@ The primary use case of this script is to:
 example@email.com,John,Amazon
 
 jane.doe@company.com,Jane,Google
+
+
+
+## Recommended platform to run this: Anaconda Cloud or GitHub CodeSpaces.
