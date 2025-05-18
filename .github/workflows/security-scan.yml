@@ -1,0 +1,77 @@
+name: Weekly Security Scan
+
+on:
+  schedule:
+    # Run every Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit safety detect-secrets
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Run Bandit security scan
+        run: |
+          bandit -r . -f json -o bandit-results.json || true
+          echo "## Bandit Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          if [ -s bandit-results.json ]; then
+            echo "Security issues found. Check the artifacts for details." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No security issues found by Bandit." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check for hardcoded secrets
+        run: |
+          detect-secrets scan --all-files > secrets-results.json
+          echo "## Hardcoded Secrets Scan Results" >> $GITHUB_STEP_SUMMARY
+          if grep -q "\"results\": {}" secrets-results.json; then
+            echo "No hardcoded secrets detected." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Potential hardcoded secrets found. Check the artifacts for details." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Check dependencies for vulnerabilities
+        run: |
+          if [ -f requirements.txt ]; then
+            safety check -r requirements.txt --json > safety-results.json || true
+            echo "## Dependency Vulnerability Scan Results" >> $GITHUB_STEP_SUMMARY
+            if [ -s safety-results.json ]; then
+              echo "Vulnerabilities found in dependencies. Check the artifacts for details." >> $GITHUB_STEP_SUMMARY
+            else
+              echo "No vulnerabilities found in dependencies." >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "## Dependency Vulnerability Scan Results" >> $GITHUB_STEP_SUMMARY
+            echo "No requirements.txt file found. Skipping dependency check." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload scan results
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-scan-results
+          path: |
+            bandit-results.json
+            secrets-results.json
+            safety-results.json
+          retention-days: 7
+
+      - name: Send notification on issues
+        if: ${{ failure() }}
+        run: |
+          echo "Security scan failed. Please check the logs for details."
+          # Add notification logic here (email, Slack, etc.)

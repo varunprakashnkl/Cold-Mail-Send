@@ -18,13 +18,27 @@ The primary use case of this script is to:
 - Attaches a predefined resume to each email.
 - Logs all sent emails to prevent resending.
 - Introduces randomized batch delays between email groups for throttling.
+- **Weekly security monitoring** to check for potential security issues.
 
 ## Files
 
 - `Cold Mail Send.ipynb` – The main notebook to run the email automation.
+- `secure_email_sender.py` - A more secure Python script version with enhanced security features.
 - `recipients.csv` – Input file with recipient details (`email`, `first_name`, `company`).
 - `Varunprakash_Shanmugam_Resume.pdf` – Resume to be attached.
 - `sent_emails_log.csv` – Auto-generated log of sent emails, this log help you by avoid sending same email again.
+- `.env.example` - Template for environment variables to store credentials securely.
+- `security_monitor.py` - Script to check for security issues in the codebase.
+
+## Security Features
+
+This repository includes several security enhancements:
+
+1. **Weekly Automated Security Scans**: GitHub Actions workflow runs security checks every Monday.
+2. **Environment Variables**: Sensitive information is stored in environment variables instead of hardcoded in the script.
+3. **Input Validation**: Email addresses and file paths are validated before use.
+4. **Logging**: Comprehensive logging with privacy protection (email hashing).
+5. **Manual Security Monitoring**: Run `python security_monitor.py` to check for security issues anytime.
 
 ## Disclaimer
 
@@ -34,21 +48,40 @@ The primary use case of this script is to:
 
 1. Install dependencies:
    ```bash
-   pip install pandas
+   pip install -r requirements.txt
+   ```
 
-2. Configure your email and recipient details:
-
-- In the notebook, update the following constants:
-  ```
-  EMAIL_ADDRESS = "your_email@gmail.com"
-  EMAIL_PASSWORD = "your_app_password"  # Use a Gmail App Password
+2. Configure your environment:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your credentials
+   ```
 
 3. Create a recipients.csv file with the following format (no headers required):
+   ```
+   example@email.com,John,Amazon
+   jane.doe@company.com,Jane,Google
+   ```
 
-example@email.com,John,Amazon
+4. Run the secure version:
+   ```bash
+   python secure_email_sender.py
+   ```
 
-jane.doe@company.com,Jane,Google
+5. Run security checks:
+   ```bash
+   python security_monitor.py
+   ```
 
+## Security Monitoring
 
+The repository includes automated weekly security checks that:
+
+1. Scan for hardcoded credentials
+2. Check for common security vulnerabilities
+3. Validate input handling
+4. Check for outdated dependencies
+
+Security reports are generated and stored as artifacts in GitHub Actions.
 
 ## Recommended platform to run this: Anaconda Cloud or GitHub CodeSpaces.
