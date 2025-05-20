@@ -47,7 +47,7 @@ The primary use case of this script is to:
 
 John,Amazon,example@email.com
 
-Jane,Google,jane.doe@company.com,
+Jane,Google,jane.doe@company.com
 
 
 
