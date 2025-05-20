@@ -45,9 +45,9 @@ The primary use case of this script is to:
 
 3. Create a recipients.csv file with the following format (no headers required):
 
-example@email.com,John,Amazon
+John,Amazon,example@email.com
 
-jane.doe@company.com,Jane,Google
+Jane,Google,jane.doe@company.com,
 
 
 
