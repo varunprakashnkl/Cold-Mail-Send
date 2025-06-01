@@ -39,6 +39,7 @@ The primary use case of this script is to:
 2. Configure your email and recipient details:
 
 - In the notebook, update the following constants: (Refer: https://medium.com/@varunprakashs/how-to-create-an-app-password-in-google-for-less-secure-apps-4828e67693cd)
+  
   ```
   EMAIL_ADDRESS = "your_email@gmail.com"
   EMAIL_PASSWORD = "your_app_password"  # Use a Gmail App Password
