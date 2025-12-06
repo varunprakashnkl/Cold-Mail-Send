@@ -78,8 +78,9 @@ pip install -r requirements.txt
    cp recipients_template.csv recipients.csv
    ```
 
-2. Edit `recipients.csv` with your recipient data (format: `first_name,company,email`):
-   ```
+2. Edit `recipients.csv` with your recipient data. **Keep the header row**, then add your recipients:
+   ```csv
+   first_name,company,email
    John,Amazon,john.recruiter@example.com
    Jane,Google,jane.recruiter@example.com
    ```

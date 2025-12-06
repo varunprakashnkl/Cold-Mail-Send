@@ -28,6 +28,9 @@ RECIPIENTS_CSV = os.getenv("RECIPIENTS_CSV", "recipients.csv")
 SENDER_NAME = os.getenv("SENDER_NAME", "Your Name")
 LINKEDIN_URL = os.getenv("LINKEDIN_URL", "https://linkedin.com/in/your-profile")
 
+# Email behavior
+EMAIL_PRIORITY = os.getenv("EMAIL_PRIORITY", "normal")  # 'high' or 'normal'
+
 # Email personalization (optional customization)
 UNIVERSITY = os.getenv("UNIVERSITY", "City University of Seattle")
 DEGREE = os.getenv("DEGREE", "Master's degree in Computer Science")
@@ -98,7 +101,12 @@ def main():
     
     # Load recipients
     try:
-        df = pd.read_csv(RECIPIENTS_CSV, header=None, names=['first_name', 'company', 'email'])
+        df = pd.read_csv(RECIPIENTS_CSV)
+        # Ensure the CSV has the required columns
+        required_columns = ['first_name', 'company', 'email']
+        if not all(col in df.columns for col in required_columns):
+            print(f"Error: CSV must have columns: {', '.join(required_columns)}")
+            return
         print(f"Loaded {len(df)} recipients from {RECIPIENTS_CSV}")
     except Exception as e:
         print(f"Error loading recipients: {e}")
@@ -106,9 +114,13 @@ def main():
     
     # Load sent emails log
     if os.path.exists(SENT_LOG_FILE):
-        sent_log_df = pd.read_csv(SENT_LOG_FILE)
-        already_sent = set(sent_log_df['email'])
-        print(f"Found {len(already_sent)} previously sent emails")
+        try:
+            sent_log_df = pd.read_csv(SENT_LOG_FILE)
+            already_sent = set(sent_log_df['email'])
+            print(f"Found {len(already_sent)} previously sent emails")
+        except Exception as e:
+            print(f"Warning: Could not read log file ({e}). Starting fresh.")
+            already_sent = set()
     else:
         already_sent = set()
         print("No previous log found - starting fresh")
@@ -163,10 +175,11 @@ def main():
         msg['To'] = recipient_email
         msg['Subject'] = f"Looking for Cloud Engineering / DevOps Opportunities at {company}"
         
-        # Set priority headers
-        msg.add_header('X-Priority', '1')
-        msg.add_header('X-MSMail-Priority', 'High')
-        msg.add_header('Importance', 'High')
+        # Set priority headers (if configured)
+        if EMAIL_PRIORITY == "high":
+            msg.add_header('X-Priority', '1')
+            msg.add_header('X-MSMail-Priority', 'High')
+            msg.add_header('Importance', 'High')
         
         # Add body
         body = create_email_body(first_name, company)
