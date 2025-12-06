@@ -63,6 +63,10 @@ except (ValueError, TypeError) as e:
     MIN_BATCH_DELAY = 30
     MAX_BATCH_DELAY = 90
 
+# Sanitization limits
+MAX_TEXT_LENGTH = 200
+MAX_FILENAME_LENGTH = 100
+
 
 def sanitize_text(text):
     """
@@ -77,7 +81,7 @@ def sanitize_text(text):
     # Remove newlines and carriage returns to prevent header injection
     text = text.replace('\n', ' ').replace('\r', ' ')
     # Limit length to prevent abuse
-    return text[:200].strip()
+    return text[:MAX_TEXT_LENGTH].strip()
 
 
 def sanitize_filename(filename):
@@ -88,7 +92,7 @@ def sanitize_filename(filename):
     filename = os.path.basename(filename)
     # Only allow alphanumeric, dots, dashes, and underscores
     filename = re.sub(r'[^a-zA-Z0-9._-]', '_', filename)
-    return filename[:100] or "resume.pdf"
+    return filename[:MAX_FILENAME_LENGTH] or "resume.pdf"
 
 
 def validate_email(email):
@@ -100,13 +104,20 @@ def validate_email(email):
     if not isinstance(email, str):
         return False
     email = email.strip()
+    
+    # Must contain @ symbol
+    if '@' not in email:
+        return False
+    
     # Check for consecutive dots
     if '..' in email:
         return False
+    
     # More strict regex pattern
     pattern = r'^[a-zA-Z0-9][a-zA-Z0-9._+-]*[a-zA-Z0-9]@[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]\.[a-zA-Z]{2,}$'
     # Also allow single character local part
-    if len(email.split('@')[0]) == 1:
+    local_part = email.split('@')[0]
+    if len(local_part) == 1:
         pattern = r'^[a-zA-Z0-9]@[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]\.[a-zA-Z]{2,}$'
     return re.match(pattern, email) is not None
 
