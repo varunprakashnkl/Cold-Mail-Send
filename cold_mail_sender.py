@@ -48,11 +48,11 @@ try:
     
     # Validate ranges
     if MIN_BATCH_SIZE < 1 or MAX_BATCH_SIZE < MIN_BATCH_SIZE or MAX_BATCH_SIZE > 20:
-        raise ValueError("Invalid batch size configuration")
+        raise ValueError(f"Invalid batch size: MIN={MIN_BATCH_SIZE}, MAX={MAX_BATCH_SIZE}. Must be 1-20 with MIN <= MAX")
     if MIN_EMAIL_DELAY < 0 or MAX_EMAIL_DELAY < MIN_EMAIL_DELAY or MAX_EMAIL_DELAY > 60:
-        raise ValueError("Invalid email delay configuration")
+        raise ValueError(f"Invalid email delay: MIN={MIN_EMAIL_DELAY}, MAX={MAX_EMAIL_DELAY}. Must be 0-60 with MIN <= MAX")
     if MIN_BATCH_DELAY < 0 or MAX_BATCH_DELAY < MIN_BATCH_DELAY or MAX_BATCH_DELAY > 300:
-        raise ValueError("Invalid batch delay configuration")
+        raise ValueError(f"Invalid batch delay: MIN={MIN_BATCH_DELAY}, MAX={MAX_BATCH_DELAY}. Must be 0-300 with MIN <= MAX")
 except (ValueError, TypeError) as e:
     print(f"Error in rate limiting configuration: {e}")
     print("Using default values instead.")
@@ -65,7 +65,13 @@ except (ValueError, TypeError) as e:
 
 
 def sanitize_text(text):
-    """Remove potentially malicious characters from text"""
+    """
+    Sanitize text to prevent email header injection and limit abuse.
+    
+    - Removes newline and carriage return characters to prevent header injection
+    - Limits text to 200 characters to prevent abuse
+    - Strips whitespace
+    """
     if not isinstance(text, str):
         return str(text)
     # Remove newlines and carriage returns to prevent header injection
@@ -86,12 +92,23 @@ def sanitize_filename(filename):
 
 
 def validate_email(email):
-    """Basic email validation"""
+    """
+    Basic email validation using RFC 5322 simplified pattern.
+    
+    Returns True if email format is valid, False otherwise.
+    """
     if not isinstance(email, str):
         return False
-    # Simple regex for basic email format validation
-    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    return re.match(pattern, email.strip()) is not None
+    email = email.strip()
+    # Check for consecutive dots
+    if '..' in email:
+        return False
+    # More strict regex pattern
+    pattern = r'^[a-zA-Z0-9][a-zA-Z0-9._+-]*[a-zA-Z0-9]@[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]\.[a-zA-Z]{2,}$'
+    # Also allow single character local part
+    if len(email.split('@')[0]) == 1:
+        pattern = r'^[a-zA-Z0-9]@[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]\.[a-zA-Z]{2,}$'
+    return re.match(pattern, email) is not None
 
 
 def create_email_body(first_name, company):
