@@ -28,6 +28,19 @@ RECIPIENTS_CSV = os.getenv("RECIPIENTS_CSV", "recipients.csv")
 SENDER_NAME = os.getenv("SENDER_NAME", "Your Name")
 LINKEDIN_URL = os.getenv("LINKEDIN_URL", "https://linkedin.com/in/your-profile")
 
+# Email personalization (optional customization)
+UNIVERSITY = os.getenv("UNIVERSITY", "City University of Seattle")
+DEGREE = os.getenv("DEGREE", "Master's degree in Computer Science")
+JOB_ROLES = os.getenv("JOB_ROLES", "Cloud Engineering/DevOps/IT Support")
+
+# Rate limiting configuration
+MIN_BATCH_SIZE = int(os.getenv("MIN_BATCH_SIZE", "3"))
+MAX_BATCH_SIZE = int(os.getenv("MAX_BATCH_SIZE", "7"))
+MIN_EMAIL_DELAY = float(os.getenv("MIN_EMAIL_DELAY", "2"))
+MAX_EMAIL_DELAY = float(os.getenv("MAX_EMAIL_DELAY", "12"))
+MIN_BATCH_DELAY = int(os.getenv("MIN_BATCH_DELAY", "30"))
+MAX_BATCH_DELAY = int(os.getenv("MAX_BATCH_DELAY", "90"))
+
 
 def create_email_body(first_name, company):
     """Create personalized email body"""
@@ -35,7 +48,7 @@ def create_email_body(first_name, company):
 
 I hope this message finds you well.
 
-My name is {SENDER_NAME}, and I recently graduated from City University of Seattle with a Master's degree in Computer Science. I am writing to express my strong interest in potential opportunities at {company}, particularly in Cloud Engineering/DevOps/IT Support roles.
+My name is {SENDER_NAME}, and I recently graduated from {UNIVERSITY} with a {DEGREE}. I am writing to express my strong interest in potential opportunities at {company}, particularly in {JOB_ROLES} roles.
 
 I have practical experience designing and implementing cloud infrastructure solutions. For instance, I architected multi-cloud solutions using CloudFormation and developed DevOps pipelines integrating EC2, S3, and Lambda services. My experience also includes architecting and deploying distributed systems using Kubernetes and implementing CI/CD pipelines with tools like GitLab CI and Jenkins. I'm proficient in technologies such as AWS, Azure, Docker, Kubernetes, Cloud Formation, and Python.
 
@@ -129,7 +142,7 @@ def main():
     print("=" * 50)
     
     email_counter = 0
-    batch_size = random.randint(3, 7)
+    batch_size = random.randint(MIN_BATCH_SIZE, MAX_BATCH_SIZE)
     sent_count = 0
     skipped_count = 0
     failed_count = 0
@@ -179,19 +192,19 @@ def main():
             print(f"[{index + 1}/{len(df)}] FAILED: {recipient_email} - {e}")
             failed_count += 1
         
-        # Per-email random delay (2-12 seconds)
-        delay = random.uniform(2, 12)
+        # Per-email random delay
+        delay = random.uniform(MIN_EMAIL_DELAY, MAX_EMAIL_DELAY)
         print(f"  Sleeping {delay:.2f}s before next email...")
         time.sleep(delay)
         
-        # Batch pause logic (after 3-7 emails, pause for 30-90 seconds)
+        # Batch pause logic
         email_counter += 1
         if email_counter >= batch_size:
-            batch_delay = random.randint(30, 90)
+            batch_delay = random.randint(MIN_BATCH_DELAY, MAX_BATCH_DELAY)
             print(f"\n  *** Batch limit reached. Sleeping {batch_delay}s to avoid spam detection... ***\n")
             time.sleep(batch_delay)
             email_counter = 0
-            batch_size = random.randint(3, 7)
+            batch_size = random.randint(MIN_BATCH_SIZE, MAX_BATCH_SIZE)
     
     # Close connection
     server.quit()
