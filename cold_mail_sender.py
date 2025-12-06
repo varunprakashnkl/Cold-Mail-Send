@@ -9,6 +9,7 @@ import pandas as pd
 import time
 import os
 import random
+import re
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
@@ -37,16 +38,68 @@ DEGREE = os.getenv("DEGREE", "Master's degree in Computer Science")
 JOB_ROLES = os.getenv("JOB_ROLES", "Cloud Engineering/DevOps/IT Support")
 
 # Rate limiting configuration
-MIN_BATCH_SIZE = int(os.getenv("MIN_BATCH_SIZE", "3"))
-MAX_BATCH_SIZE = int(os.getenv("MAX_BATCH_SIZE", "7"))
-MIN_EMAIL_DELAY = float(os.getenv("MIN_EMAIL_DELAY", "2"))
-MAX_EMAIL_DELAY = float(os.getenv("MAX_EMAIL_DELAY", "12"))
-MIN_BATCH_DELAY = int(os.getenv("MIN_BATCH_DELAY", "30"))
-MAX_BATCH_DELAY = int(os.getenv("MAX_BATCH_DELAY", "90"))
+try:
+    MIN_BATCH_SIZE = int(os.getenv("MIN_BATCH_SIZE", "3"))
+    MAX_BATCH_SIZE = int(os.getenv("MAX_BATCH_SIZE", "7"))
+    MIN_EMAIL_DELAY = float(os.getenv("MIN_EMAIL_DELAY", "2"))
+    MAX_EMAIL_DELAY = float(os.getenv("MAX_EMAIL_DELAY", "12"))
+    MIN_BATCH_DELAY = int(os.getenv("MIN_BATCH_DELAY", "30"))
+    MAX_BATCH_DELAY = int(os.getenv("MAX_BATCH_DELAY", "90"))
+    
+    # Validate ranges
+    if MIN_BATCH_SIZE < 1 or MAX_BATCH_SIZE < MIN_BATCH_SIZE or MAX_BATCH_SIZE > 20:
+        raise ValueError("Invalid batch size configuration")
+    if MIN_EMAIL_DELAY < 0 or MAX_EMAIL_DELAY < MIN_EMAIL_DELAY or MAX_EMAIL_DELAY > 60:
+        raise ValueError("Invalid email delay configuration")
+    if MIN_BATCH_DELAY < 0 or MAX_BATCH_DELAY < MIN_BATCH_DELAY or MAX_BATCH_DELAY > 300:
+        raise ValueError("Invalid batch delay configuration")
+except (ValueError, TypeError) as e:
+    print(f"Error in rate limiting configuration: {e}")
+    print("Using default values instead.")
+    MIN_BATCH_SIZE = 3
+    MAX_BATCH_SIZE = 7
+    MIN_EMAIL_DELAY = 2.0
+    MAX_EMAIL_DELAY = 12.0
+    MIN_BATCH_DELAY = 30
+    MAX_BATCH_DELAY = 90
+
+
+def sanitize_text(text):
+    """Remove potentially malicious characters from text"""
+    if not isinstance(text, str):
+        return str(text)
+    # Remove newlines and carriage returns to prevent header injection
+    text = text.replace('\n', ' ').replace('\r', ' ')
+    # Limit length to prevent abuse
+    return text[:200].strip()
+
+
+def sanitize_filename(filename):
+    """Sanitize filename for email attachment"""
+    if not isinstance(filename, str):
+        return "resume.pdf"
+    # Remove path separators and special characters
+    filename = os.path.basename(filename)
+    # Only allow alphanumeric, dots, dashes, and underscores
+    filename = re.sub(r'[^a-zA-Z0-9._-]', '_', filename)
+    return filename[:100] or "resume.pdf"
+
+
+def validate_email(email):
+    """Basic email validation"""
+    if not isinstance(email, str):
+        return False
+    # Simple regex for basic email format validation
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return re.match(pattern, email.strip()) is not None
 
 
 def create_email_body(first_name, company):
     """Create personalized email body"""
+    # Sanitize inputs to prevent injection
+    first_name = sanitize_text(first_name)
+    company = sanitize_text(company)
+    
     return f"""Dear {first_name},
 
 I hope this message finds you well.
@@ -160,9 +213,15 @@ def main():
     failed_count = 0
     
     for index, row in df.iterrows():
-        recipient_email = row['email']
-        first_name = row['first_name']
-        company = row['company']
+        recipient_email = str(row['email']).strip()
+        first_name = str(row['first_name'])
+        company = str(row['company'])
+        
+        # Validate email format
+        if not validate_email(recipient_email):
+            print(f"[{index + 1}/{len(df)}] INVALID EMAIL: {recipient_email} - skipping")
+            failed_count += 1
+            continue
         
         if recipient_email in already_sent:
             print(f"[{index + 1}/{len(df)}] SKIPPED (already sent): {recipient_email}")
@@ -173,7 +232,9 @@ def main():
         msg = MIMEMultipart()
         msg['From'] = formataddr((SENDER_NAME, EMAIL_ADDRESS))
         msg['To'] = recipient_email
-        msg['Subject'] = f"Looking for Cloud Engineering / DevOps Opportunities at {company}"
+        # Sanitize company name to prevent header injection
+        safe_company = sanitize_text(company)
+        msg['Subject'] = f"Looking for Cloud Engineering / DevOps Opportunities at {safe_company}"
         
         # Set priority headers (if configured)
         if EMAIL_PRIORITY == "high":
@@ -186,8 +247,9 @@ def main():
         msg.attach(MIMEText(body, 'plain'))
         
         # Attach resume
-        part = MIMEApplication(resume_data, Name=RESUME_FILENAME)
-        part['Content-Disposition'] = f'attachment; filename="{RESUME_FILENAME}"'
+        safe_filename = sanitize_filename(RESUME_FILENAME)
+        part = MIMEApplication(resume_data, Name=safe_filename)
+        part['Content-Disposition'] = f'attachment; filename="{safe_filename}"'
         msg.attach(part)
         
         # Send email
