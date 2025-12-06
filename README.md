@@ -1,6 +1,10 @@
 # Bulk Recruiter Email Sender
 
-This Jupyter Notebook is designed **for educational purposes only**. It demonstrates how to automate the process of sending personalized emails to multiple recruiters using Python. The goal is to help job seekers efficiently reach out to potential employers and improve their chances of getting noticed during the job search.
+This project is designed **for educational purposes only**. It demonstrates how to automate the process of sending personalized emails to multiple recruiters using Python. The goal is to help job seekers efficiently reach out to potential employers and improve their chances of getting noticed during the job search.
+
+You can use either:
+- **Jupyter Notebook** (`Cold Mail Send.ipynb`) - Interactive notebook interface
+- **Python Script** (`cold_mail_sender.py`) - Command-line interface with `.env` support
 
 ## Purpose
 
@@ -21,10 +25,19 @@ The primary use case of this script is to:
 
 ## Files
 
-- `Cold Mail Send.ipynb` – The main notebook to run the email automation.
-- `recipients.csv` – Input file with recipient details (`email`, `first_name`, `company`).
-- `Varunprakash_Shanmugam_Resume.pdf` – Resume to be attached.
-- `sent_emails_log.csv` – Auto-generated log of sent emails, this log help you by avoid sending same email again.
+### Main Files
+- `Cold Mail Send.ipynb` – Jupyter notebook to run the email automation interactively.
+- `cold_mail_sender.py` – Python script for command-line execution with environment variable support.
+
+### Configuration Files
+- `.env.example` – Template for environment variables (copy to `.env` and fill in your details).
+- `recipients_template.csv` – Template for recipient details (copy to `recipients.csv` and add your data).
+- `requirements.txt` – Python dependencies.
+
+### Data Files (Auto-generated/User-provided)
+- `recipients.csv` – Input file with recipient details (`first_name`, `company`, `email`).
+- `your_resume.pdf` – Your resume file to be attached (name it as you prefer).
+- `sent_emails_log.csv` – Auto-generated log of sent emails to avoid duplicates.
 
 ## Disclaimer
 
@@ -32,24 +45,76 @@ The primary use case of this script is to:
 
 ## Getting Started
 
-1. Install dependencies:
+### 1. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Configure Your Settings
+
+**Option A: Using .env file (Recommended for Python Script)**
+
+1. Copy the example environment file:
    ```bash
-   pip install pandas
+   cp .env.example .env
+   ```
 
-2. Configure your email and recipient details:
+2. Edit `.env` and fill in your details:
+   - `EMAIL_ADDRESS` – Your Gmail address
+   - `EMAIL_PASSWORD` – Your Gmail App Password ([How to create](https://medium.com/@varunprakashs/how-to-create-an-app-password-in-google-for-less-secure-apps-4828e67693cd))
+   - `RESUME_PATH` – Path to your resume file
+   - `SENDER_NAME` – Your full name
+   - `LINKEDIN_URL` – Your LinkedIn profile URL
 
-- In the notebook, update the following constants: (Refer: https://medium.com/@varunprakashs/how-to-create-an-app-password-in-google-for-less-secure-apps-4828e67693cd)
-  
-  ```
-  EMAIL_ADDRESS = "your_email@gmail.com"
-  EMAIL_PASSWORD = "your_app_password"  # Use a Gmail App Password
+**Option B: Edit the Jupyter Notebook directly**
 
-3. Create a recipients.csv file with the following format (no headers required):
+- Open `Cold Mail Send.ipynb` and update the constants in the code cell.
 
-John,Amazon,example@email.com
+### 3. Prepare Recipients List
 
-Jane,Google,jane.doe@company.com
+1. Copy the template:
+   ```bash
+   cp recipients_template.csv recipients.csv
+   ```
+
+2. Edit `recipients.csv` with your recipient data. **Keep the header row**, then add your recipients:
+   ```csv
+   first_name,company,email
+   John,Amazon,john.recruiter@example.com
+   Jane,Google,jane.recruiter@example.com
+   ```
+
+### 4. Add Your Resume
+
+Place your resume PDF in the project directory and update the filename in your configuration.
+
+### 5. Run the Tool
+
+**Using Python Script:**
+```bash
+python cold_mail_sender.py
+```
+
+**Using Jupyter Notebook:**
+Open `Cold Mail Send.ipynb` in Jupyter and run the cells.
 
 
 
-## Recommended platform to run this: Anaconda Cloud or GitHub CodeSpaces.
+## Recommended Platforms
+
+- **Jupyter Notebook**: Anaconda, JupyterLab, Google Colab
+- **Python Script**: Any Python 3.7+ environment, GitHub Codespaces, local machine
+- **Cloud**: GitHub Codespaces, Anaconda Cloud
+
+## Security Notes
+
+⚠️ **Important**: Never commit sensitive files to version control!
+
+The `.gitignore` file is configured to exclude:
+- `.env` (your credentials)
+- `recipients.csv` (recipient data)
+- `sent_emails_log.csv` (logs)
+- Resume files (`.pdf`, `.doc`, `.docx`)
+
+Always keep your credentials and personal data secure.
